@@ -7,7 +7,7 @@ import AVFoundation
 
 class DetailsView: UIView {
     func setup() {
-        layer.borderColor = UIColor.white.withAlphaComponent(0.7).cgColor
+        layer.borderColor = UIColor.red.withAlphaComponent(0.7).cgColor
         layer.borderWidth = 5.0
     }
 }
