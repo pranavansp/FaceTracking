@@ -39,7 +39,9 @@ class DetailsView: UIView {
 
 
 class ViewController: UIViewController {
-
+    //Store Image
+    let stillImageOutput = AVCaptureStillImageOutput()
+    
     var session: AVCaptureSession?
     var stillOutput = AVCaptureStillImageOutput()
     var borderLayer: CAShapeLayer?
@@ -85,6 +87,23 @@ class ViewController: UIViewController {
         sessionPrepare()
         session?.startRunning()
     }
+    
+    //Function  to Store Image
+    func saveToCamera() {
+        
+        if let videoConnection = stillImageOutput.connection(withMediaType: AVMediaTypeVideo) {
+            
+            stillImageOutput.captureStillImageAsynchronously(from: videoConnection, completionHandler: { (CMSampleBuffer, Error) in
+                if let imageData = AVCaptureStillImageOutput.jpegStillImageNSDataRepresentation(CMSampleBuffer) {
+                    
+                    if let cameraImage = UIImage(data: imageData) {
+                        
+                        UIImageWriteToSavedPhotosAlbum(cameraImage, nil, nil, nil)
+                    }
+                }
+            })
+        }
+    }
 }
 
 extension ViewController {
@@ -99,6 +118,11 @@ extension ViewController {
         do {
             let deviceInput = try AVCaptureDeviceInput(device: captureDevice)
             session.beginConfiguration()
+            stillImageOutput.outputSettings = [AVVideoCodecKey:AVVideoCodecJPEG]
+            
+            if session.canAddOutput(stillImageOutput) {
+                session.addOutput(stillImageOutput)
+            }
             
             if session.canAddInput(deviceInput) {
                 session.addInput(deviceInput)
