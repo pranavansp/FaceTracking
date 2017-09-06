@@ -1,45 +1,22 @@
 //
 //  ViewController.swift
 //  AutoCamera
-//
-//  Created by Pawel Chmiel on 26.09.2016.
-//  Copyright © 2016 Pawel Chmiel. All rights reserved.
-//
 
 import UIKit
 import AVFoundation
 
 class DetailsView: UIView {
-
-    lazy var detailsLabel: UILabel = {
-        let detailsLabel = UILabel(frame: CGRect(x: 0, y: 0, width: self.frame.size.width, height: self.frame.size.height))
-        detailsLabel.numberOfLines = 0
-        detailsLabel.textColor = .white
-        detailsLabel.font = UIFont.systemFont(ofSize: 18.0)
-        detailsLabel.textAlignment = .left
-       
-        return detailsLabel
-    }()
-    
     func setup() {
-        layer.borderColor = UIColor.red.withAlphaComponent(0.7).cgColor
+        layer.borderColor = UIColor.white.withAlphaComponent(0.7).cgColor
         layer.borderWidth = 5.0
-  
-        addSubview(detailsLabel)
-    }
-    
-   override var frame: CGRect {
-        didSet(newFrame) {
-            var detailsFrame = detailsLabel.frame
-            detailsFrame = CGRect(x: 0, y: newFrame.size.height, width: newFrame.size.width * 2.0, height: newFrame.size.height / 2.0)
-            detailsLabel.frame = detailsFrame
-        }
     }
 }
 
 
 class ViewController: UIViewController {
 
+    let stillImageOutput = AVCaptureStillImageOutput()
+    
     var session: AVCaptureSession?
     var stillOutput = AVCaptureStillImageOutput()
     var borderLayer: CAShapeLayer?
@@ -85,6 +62,22 @@ class ViewController: UIViewController {
         sessionPrepare()
         session?.startRunning()
     }
+    //function to store image
+    func saveToCamera() {
+        
+        if let videoConnection = stillImageOutput.connection(withMediaType: AVMediaTypeVideo) {
+            
+            stillImageOutput.captureStillImageAsynchronously(from: videoConnection, completionHandler: { (CMSampleBuffer, Error) in
+                if let imageData = AVCaptureStillImageOutput.jpegStillImageNSDataRepresentation(CMSampleBuffer) {
+                    
+                    if let cameraImage = UIImage(data: imageData) {
+                        
+                        UIImageWriteToSavedPhotosAlbum(cameraImage, nil, nil, nil)
+                    }
+                }
+            })
+        }
+    }
 }
 
 extension ViewController {
@@ -96,9 +89,15 @@ extension ViewController {
         
         session.sessionPreset = AVCaptureSessionPresetPhoto
         
+        
         do {
             let deviceInput = try AVCaptureDeviceInput(device: captureDevice)
             session.beginConfiguration()
+            stillImageOutput.outputSettings = [AVVideoCodecKey:AVVideoCodecJPEG]
+            
+            if session.canAddOutput(stillImageOutput) {
+                session.addOutput(stillImageOutput)
+            }
             
             if session.canAddInput(deviceInput) {
                 session.addInput(deviceInput)
@@ -142,11 +141,7 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
         for feature in features {
             if let faceFeature = feature as? CIFaceFeature {
                 let faceRect = calculateFaceRect(facePosition: faceFeature.mouthPosition, faceBounds: faceFeature.bounds, clearAperture: cleanAperture)
-                let featureDetails = ["has smile: \(faceFeature.hasSmile)",
-                    "has closed left eye: \(faceFeature.leftEyeClosed)",
-                    "has closed right eye: \(faceFeature.rightEyeClosed)"]
-                
-                update(with: faceRect, text: featureDetails.joined(separator: "\n"))
+                update(with: faceRect)
             }
         }
         
@@ -220,17 +215,16 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
         faceRect.origin.y *= heightScaleBy
         
         faceRect = faceRect.offsetBy(dx: 0.0, dy: previewBox.origin.y)
-        let frame = CGRect(x: parentFrameSize.width - faceRect.origin.x - faceRect.size.width / 2.0 - previewBox.origin.x / 2.0, y: faceRect.origin.y, width: faceRect.width, height: faceRect.height)
-        
+        let frame = CGRect(x: parentFrameSize.width - faceRect.origin.x - faceRect.size.width - previewBox.origin.x / 2.0, y: faceRect.origin.y, width: faceRect.width, height: faceRect.height)
+
         return frame
     }
+   
 }
-
 extension ViewController {
-    func update(with faceRect: CGRect, text: String) {
+    func update(with faceRect: CGRect) {
         DispatchQueue.main.async {
             UIView.animate(withDuration: 0.2) {
-                self.detailsView.detailsLabel.text = text
                 self.detailsView.alpha = 1.0
                 self.detailsView.frame = faceRect
             }
