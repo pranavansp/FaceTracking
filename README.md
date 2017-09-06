@@ -7,7 +7,7 @@ Below an example how it works.
 
 
 # Store image on Device
-Caliing below function will help you to store image on device.
+Calling below function will help you to store image on device.
 ```swift
 func saveToCamera() {
    if let videoConnection = stillImageOutput.connection(withMediaType: AVMediaTypeVideo) {
