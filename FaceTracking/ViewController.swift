@@ -220,7 +220,7 @@ extension ViewController: AVCaptureVideoDataOutputSampleBufferDelegate {
         faceRect.origin.y *= heightScaleBy
         
         faceRect = faceRect.offsetBy(dx: 0.0, dy: previewBox.origin.y)
-        let frame = CGRect(x: parentFrameSize.width - faceRect.origin.x - faceRect.size.width / 2.0 - previewBox.origin.x / 2.0, y: faceRect.origin.y, width: faceRect.width, height: faceRect.height)
+        let frame = CGRect(x: parentFrameSize.width - faceRect.origin.x - faceRect.size.width - previewBox.origin.x / 2.0, y: faceRect.origin.y, width: faceRect.width, height: faceRect.height)
         
         return frame
     }
